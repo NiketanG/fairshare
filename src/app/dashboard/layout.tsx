@@ -22,13 +22,11 @@ export default function DashboardLayout({
       try {
         const { data: { user }, error: userError } = await supabase.auth.getUser()
         if (userError) throw userError
-        
+
         if (!user) {
           console.log('No user found')
           return
         }
-
-        console.log('User found:', { id: user.id, metadata: user.user_metadata })
 
         // Try to get existing profile
         const { data: profile, error: fetchError } = await supabase
@@ -37,33 +35,27 @@ export default function DashboardLayout({
           .eq('id', user.id)
           .single()
 
-        console.log('Profile fetch result:', { profile, error: fetchError })
-
         if (fetchError) {
           if (fetchError.code === 'PGRST116') { // Record not found
-            console.log('Creating new profile for user:', user.id)
-            
+
             const newProfileData = {
               id: user.id,
               full_name: user.user_metadata.full_name,
               avatar_url: user.user_metadata.avatar_url,
+              email: user.email,
             }
-            
-            console.log('Attempting to insert profile:', newProfileData)
-            
+
             const { data: newProfile, error: insertError } = await supabase
               .from('profiles')
               .insert([newProfileData])
               .select()
               .single()
 
-            console.log('Profile insert result:', { newProfile, error: insertError })
-
             if (insertError) {
               console.error('Failed to insert profile:', insertError)
               throw insertError
             }
-            
+
             setProfile(newProfile)
             toast.success('Profile created successfully')
           } else {

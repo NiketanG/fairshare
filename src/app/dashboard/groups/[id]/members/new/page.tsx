@@ -1,15 +1,14 @@
 'use client'
 
-import { useState, use } from 'react'
-import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { toast } from 'sonner'
+import { supabase } from '@/lib/supabase'
 import { ArrowLeft, Loader2 } from 'lucide-react'
-import { Database } from '@/types/database'
+import { useRouter } from 'next/navigation'
+import { use, useState } from 'react'
+import { toast } from 'sonner'
 
 
 
@@ -28,28 +27,19 @@ export default function AddMemberPage({ params }: { params: Promise<{ id: string
     try {
       // Create new member
       const { data: member, error: memberError } = await supabase
-        .from('members')
+        .from('group_members')
         .insert([{
           full_name: name.trim(),
-          email: email.trim() || null
+          email: email.trim() || null,
+          group_id: id,
         }])
         .select()
         .single()
 
       if (memberError) throw memberError
 
-      // Add member to group
-      const { error: groupMemberError } = await supabase
-        .from('group_members')
-        .insert([{
-          group_id: id,
-          member_id: member.id
-        }])
-
-      if (groupMemberError) throw groupMemberError
-
       toast.success('Member added successfully!')
-      router.push(`/dashboard/groups/${id}`)
+      router.push(`/dashboard/groups/${id}?tab=members`)
       router.refresh()
     } catch (error) {
       console.error('Error adding member:', error)

@@ -9,7 +9,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Database } from '@/types/database'
 import { toast } from 'sonner'
 
-type Group = Database['public']['Tables']['groups']['Row']
+type Group = Database['public']['Tables']['groups']['Row'] & {
+  created_by_user: Database['public']['Tables']['profiles']['Row']
+  group_members: Database['public']['Tables']['group_members']['Row'][]
+}
 
 export default function DashboardPage() {
   const [groups, setGroups] = useState<Group[]>([])
@@ -23,27 +26,25 @@ export default function DashboardPage() {
         if (userError) throw userError
 
         if (!user) {
-          console.log('No user found for groups fetch')
           return
         }
 
-        console.log('Fetching groups for user:', user.id)
+        const { data: groupItems, error: groupError } = await supabase
+          .from('group_members')
+          .select('group_id')
+          .eq('user_id', user.id)
+          .or(`email.eq.${user.email}`)
 
-        // Get all groups where user is creator
-        const { data: createdGroups, error: createdError } = await supabase
-          .from('groups')
-          .select('*')
-          .eq('created_by', user.id)
+        if (groupItems && groupItems.length > 0) {
+          // select from groups where "id" is in groupItems
+          const { data: memberGroups, error: memberGroupError } = await supabase
+            .from('groups')
+            .select('*, group_members(id), created_by_user:created_by(full_name)')
+            .in('id', groupItems.map(item => item.group_id))
 
-        if (createdError) {
-          console.error('Error fetching created groups:', createdError)
-          throw createdError
+          setGroups(memberGroups || [])
         }
 
-        console.log('Created groups:', createdGroups)
-        setGroups(createdGroups || [])
-
-        // Later we can add groups where user is a member
       } catch (error) {
         console.error('Error in groups fetch:', error)
         toast.error(error instanceof Error ? error.message : 'Failed to fetch groups')
@@ -95,9 +96,9 @@ export default function DashboardPage() {
       ) : groups.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {groups.map((group) => (
-            <Card 
-              key={group.id} 
-              className="hover:shadow-lg transition-shadow cursor-pointer" 
+            <Card
+              key={group.id}
+              className="hover:shadow-lg transition-shadow cursor-pointer"
               onClick={() => router.push(`/dashboard/groups/${group.id}`)}
             >
               <CardHeader>
@@ -108,7 +109,14 @@ export default function DashboardPage() {
                 <CardDescription>Created {new Date(group.created_at).toLocaleDateString()}</CardDescription>
               </CardHeader>
               <CardContent>
-                {/* Add group summary here */}
+                {group.created_by_user && (
+                  <p className="text-sm text-muted-foreground">
+                    Created by {group.created_by_user?.full_name}
+                  </p>)}
+                {group.group_members && (
+                  <p className="text-sm text-muted-foreground">
+                    {group.group_members.length} members
+                  </p>)}
               </CardContent>
             </Card>
           ))}

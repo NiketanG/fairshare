@@ -45,6 +45,7 @@ export interface Database {
           name: string
           emoji: string
           created_by: string
+          currency: string
         }
         Insert: {
           id?: string
@@ -59,6 +60,7 @@ export interface Database {
           name?: string
           emoji?: string
           created_by?: string
+          currency?: string
         }
       }
       members: {
@@ -133,7 +135,7 @@ export interface Database {
           split_type?: 'equal' | 'custom'
         }
       }
-      expense_shares: {
+      splits: {
         Row: {
           id: string
           created_at: string

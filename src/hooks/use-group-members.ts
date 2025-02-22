@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Database } from '@/types/database'
 
-type Member = Database['public']['Tables']['members']['Row']
+type Member = Database['public']['Tables']['group_members']['Row']
 type Profile = Database['public']['Tables']['profiles']['Row']
 
-interface MemberWithProfile extends Member {
+export type MemberWithProfile = Member & Profile & {
   profile?: Profile
 }
 
@@ -30,18 +30,16 @@ export function useGroupMembers(groupId: string): UseGroupMembersReturn {
         .from('group_members')
         .select(`
           *,
-          member:members!inner(
-            *,
-            profile:profiles(*)
-          )
+          profile:profiles(*)
         `)
         .eq('group_id', groupId)
-
+      
       if (memberError) throw memberError
 
       const memberDetails = memberData?.map(gm => ({
-        ...gm.member,
-        profile: gm.member.profile
+        ...gm.profile,
+        profile: gm.profile,
+        ...gm,
       })) as MemberWithProfile[]
 
       setMembers(memberDetails)
