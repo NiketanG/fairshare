@@ -113,10 +113,10 @@ export function ExpenseForm({
 
       setFormData(prev => ({ ...prev, memberSplits: newSplits }))
     } else if (formData.splitType === 'shares') {
-      const totalShares = currentSplits.reduce((sum, split) => sum + (split.shares || 1), 0)
+      const totalShares = currentSplits.reduce((sum, split) => sum + (split.shares || 0), 0)
       const newSplits = currentSplits.map(split => ({
         ...split,
-        amount: Number((totalAmount * ((split.shares || 1) / totalShares)).toFixed(2))
+        amount: split.shares === 0 ? 0 : Number((totalAmount * ((split.shares || 0) / totalShares)).toFixed(2))
       }))
       setFormData(prev => ({ ...prev, memberSplits: newSplits }))
     }

@@ -142,6 +142,7 @@ export interface Database {
           expense_id: string
           member_id: string
           amount: number
+          split_type: 'equal' | 'custom' | 'shares'
         }
         Insert: {
           id?: string
@@ -149,6 +150,7 @@ export interface Database {
           expense_id: string
           member_id: string
           amount: number
+          split_type?: 'equal' | 'custom' | 'shares'
         }
         Update: {
           id?: string
@@ -156,6 +158,7 @@ export interface Database {
           expense_id?: string
           member_id?: string
           amount?: number
+          split_type?: 'equal' | 'custom' | 'shares'
         }
       }
     }

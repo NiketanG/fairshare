@@ -169,11 +169,12 @@ export default function ExpensePage({ params }: { params: Promise<{ id: string, 
       return {
         memberId: member.id,
         amount: split?.amount || 0,
-        shares: split?.percentage ? (split.percentage / 100) : 1,
-        included: split ? split.amount > 0 : true
+        included: split ? split.amount > 0 : true,
+        shares: split?.amount === 0 ? 0 : (expense?.splits?.reduce((sum, s) => sum + (s.amount || 0), 0) ?? 0) / expense.amount
       }
     })
   }
+
 
   return (
     <div className="container max-w-lg mx-auto py-8">

@@ -9,7 +9,7 @@ import Picker from '@emoji-mart/react'
 import { CurrencySelect } from '@/components/ui/currency-select'
 import { Label } from '@/components/ui/label'
 
-interface GroupFormData {
+export interface GroupFormData {
     name: string
     emoji: string
     currency: string

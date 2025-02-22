@@ -1,27 +1,14 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { GroupForm, GroupFormData } from '@/components/group-form'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { supabase } from '@/lib/supabase'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
+import { useRouter } from 'next/navigation'
+import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { Loader2 } from 'lucide-react'
-import data from '@emoji-mart/data'
-import Picker from '@emoji-mart/react'
-import { GroupForm } from '@/components/group-form'
 
-interface Group {
-  id: string;
-  name: string;
-  emoji: string;
-  created_by: string;
-}
 
 export default function NewGroupPage() {
-  const [name, setName] = useState('')
-  const [emoji, setEmoji] = useState('👥')
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
