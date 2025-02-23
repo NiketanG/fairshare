@@ -106,9 +106,11 @@ export default function DashboardLayout({
 				<div className="container mx-auto py-4 px-6 md:px-0">
 					<div className="flex justify-between items-center">
 						<Link href="/dashboard">
-							<h1 className="text-xl md:text-2xl font-bold">
-								FairShare
-							</h1>
+							<img
+								src="/logo.png"
+								alt="FairShare"
+								className="h-8 md:h-12"
+							/>
 						</Link>
 						<div className="flex items-center space-x-4">
 							<Button

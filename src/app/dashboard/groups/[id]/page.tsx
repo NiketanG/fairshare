@@ -264,7 +264,7 @@ export default function GroupPage({
 							</Button>
 						</Link>
 					</div>
-					<div className="space-y-4">
+					<div className="flex flex-col space-y-4">
 						{expenses.map((expense) => (
 							<Link
 								href={`/dashboard/groups/${id}/expenses/${expense.id}`}

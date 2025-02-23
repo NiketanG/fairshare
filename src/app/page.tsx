@@ -144,8 +144,13 @@ export default function SignInPage() {
 			) : (
 				<Card className="w-[380px] shadow-lg">
 					<CardHeader className="text-center">
-						<CardTitle className="text-2xl font-bold">
-							Welcome to FairShare
+						<CardTitle className="text-2xl font-bold flex items-center flex-col">
+							<span>Welcome to</span>
+							<img
+								src="/logo.png"
+								alt="FairShare"
+								className="h-8 md:h-12"
+							/>
 						</CardTitle>
 						<CardDescription>
 							Split expenses with friends, hassle-free

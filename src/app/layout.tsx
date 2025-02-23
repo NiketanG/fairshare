@@ -1,9 +1,12 @@
 import "@/styles/globals.css";
-import { Inter } from "next/font/google";
+import { Poppins } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { Toaster } from "sonner";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Poppins({
+	subsets: ["latin"],
+	weight: ["300", "400", "500", "600", "700", "800"],
+});
 
 export const metadata = {
 	title: "FairShare - Split Expenses with Friends",
