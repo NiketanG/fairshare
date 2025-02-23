@@ -70,7 +70,8 @@ export default function SignInPage() {
 			if (window.google) {
 				/* global google */
 				window.google.accounts.id.initialize({
-					client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+					client_id: process.env
+						.NEXT_PUBLIC_GOOGLE_CLIENT_ID as string,
 					callback: async (response: CredentialResponse) => {
 						try {
 							// send id token returned in response.credential to supabase
