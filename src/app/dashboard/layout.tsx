@@ -31,7 +31,6 @@ export default function DashboardLayout({
 				if (userError) throw userError;
 
 				if (!user) {
-					console.log("No user found");
 					return;
 				}
 
@@ -75,7 +74,6 @@ export default function DashboardLayout({
 						throw fetchError;
 					}
 				} else {
-					console.log("Existing profile found:", profile);
 					setProfile(profile);
 				}
 			} catch (error) {
