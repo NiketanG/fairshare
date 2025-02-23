@@ -67,9 +67,9 @@ export default function SignInPage() {
 				return;
 			}
 
-			if (google) {
+			if (window.google) {
 				/* global google */
-				google.accounts.id.initialize({
+				window.google.accounts.id.initialize({
 					client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
 					callback: async (response: CredentialResponse) => {
 						try {
@@ -96,7 +96,7 @@ export default function SignInPage() {
 					// with chrome's removal of third-party cookiesm, we need to use FedCM instead (https://developers.google.com/identity/gsi/web/guides/fedcm-migration)
 					use_fedcm_for_prompt: true,
 				});
-				google.accounts.id.prompt(); // Display the One Tap UI
+				window.google.accounts.id.prompt(); // Display the One Tap UI
 			}
 		};
 
