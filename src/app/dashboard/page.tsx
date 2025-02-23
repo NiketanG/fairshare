@@ -11,7 +11,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { PlusIcon } from "lucide-react";
 import Link from "next/link";
-import { fetchGroups } from "../../lib/api";
+import { fetchGroups } from "@/lib/api";
 
 export default function DashboardPage() {
 	const { data: groups, isLoading } = useQuery({

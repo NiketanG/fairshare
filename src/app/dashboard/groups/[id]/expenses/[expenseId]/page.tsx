@@ -13,24 +13,15 @@ import {
 	AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { getCurrencySymbol } from "@/components/ui/currency-select";
+import { getExpenseByExpenseId, useGroup } from "@/hooks/use-group";
 import { useGroupMembers } from "@/hooks/use-group-members";
 import { supabase } from "@/lib/supabase";
-import { Database } from "@/types/database";
 import { useQuery } from "@tanstack/react-query";
 import { Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { use, useState } from "react";
 import { toast } from "sonner";
-import { getCurrencySymbol } from "../../../../../../components/ui/currency-select";
-import {
-	getExpenseByExpenseId,
-	useGroup,
-} from "../../../../../../hooks/use-group";
-
-type Split = Database["public"]["Tables"]["splits"]["Row"];
-type Expense = Database["public"]["Tables"]["expenses"]["Row"] & {
-	splits?: Split[];
-};
 
 export default function ExpensePage({
 	params,

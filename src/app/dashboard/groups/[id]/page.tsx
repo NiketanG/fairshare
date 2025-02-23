@@ -20,6 +20,7 @@ import { useGroupMembers } from "@/hooks/use-group-members";
 import { useUser } from "@/hooks/use-user";
 import { supabase } from "@/lib/supabase";
 import { getInitials } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Pencil, Plus, Trash2, UserPlus } from "lucide-react";
 import Link from "next/link";
 import {
@@ -29,10 +30,8 @@ import {
 } from "next/navigation";
 import { use, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { GroupForm } from "../../../../components/group-form";
-import { Balance, Expense } from "../../../../types";
-import { useQuery } from "@tanstack/react-query";
-import { fetchExpenses } from "../../../../lib/api";
+import { GroupForm } from "@/components/group-form";
+import { fetchExpenses } from "@/lib/api";
 
 type GroupFormData = {
 	name: string;
