@@ -82,13 +82,9 @@ export default function SignInPage() {
 								});
 
 							if (error) throw error;
-							console.log("Session data: ", data);
-							console.log(
-								"Successfully logged in with Google One Tap"
-							);
 
 							// redirect to protected page
-							router.push("/");
+							router.push("/dashboard");
 						} catch (error) {
 							console.error(
 								"Error logging in with Google One Tap",
