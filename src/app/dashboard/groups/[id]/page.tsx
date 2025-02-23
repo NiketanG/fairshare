@@ -57,6 +57,7 @@ export default function GroupPage({
 	const navigationRouter = useNavigationRouter();
 	const searchParams = useSearchParams();
 	const defaultTab = searchParams.get("tab") || "expenses";
+	const [showDeleteModal, setShowDeleteModal] = useState(false);
 
 	const { data: expenses, isLoading: loading } = useQuery({
 		queryKey: ["expenses", id],
@@ -69,6 +70,62 @@ export default function GroupPage({
 			toast.error("Failed to load members");
 		}
 	}, [membersError]);
+
+	const handleDeleteMember = async (memberId: string) => {
+		try {
+			const { error } = await supabase
+				.from("group_members")
+				.delete()
+				.eq("id", memberId);
+
+			if (error) throw error;
+
+			toast.success("Member removed successfully");
+			router.refresh();
+		} catch (error) {
+			console.error("Error removing member:", error);
+			toast.error("Failed to remove member");
+		}
+	};
+
+	const handleDeleteGroup = () => {
+		setShowDeleteModal(true);
+	};
+
+	const onDeleteGroup = async () => {
+		try {
+			const { error } = await supabase
+				.from("groups")
+				.delete()
+				.eq("id", id);
+
+			if (error) throw error;
+
+			toast.success("Group deleted successfully");
+			navigationRouter.push("/dashboard");
+		} catch (error) {
+			console.error("Error deleting group:", error);
+			toast.error("Failed to delete group");
+		}
+	};
+
+	const handleEditGroup = async (data: GroupFormData) => {
+		try {
+			await updateGroup({
+				name: data.name,
+				emoji: data.emoji,
+				currency: data.currency,
+			});
+		} catch (error) {
+			// Error is already handled by updateGroup
+		}
+	};
+
+	const handleTabChange = (value: string) => {
+		const params = new URLSearchParams(searchParams);
+		params.set("tab", value);
+		navigationRouter.push(`/dashboard/groups/${id}?${params.toString()}`);
+	};
 
 	// Update loading state to consider both group and members loading
 	if (loading || groupLoading || membersLoading) {
@@ -101,41 +158,6 @@ export default function GroupPage({
 			</div>
 		);
 	}
-
-	const handleDeleteMember = async (memberId: string) => {
-		try {
-			const { error } = await supabase
-				.from("group_members")
-				.delete()
-				.eq("id", memberId);
-
-			if (error) throw error;
-
-			toast.success("Member removed successfully");
-			router.refresh();
-		} catch (error) {
-			console.error("Error removing member:", error);
-			toast.error("Failed to remove member");
-		}
-	};
-
-	const handleEditGroup = async (data: GroupFormData) => {
-		try {
-			await updateGroup({
-				name: data.name,
-				emoji: data.emoji,
-				currency: data.currency,
-			});
-		} catch (error) {
-			// Error is already handled by updateGroup
-		}
-	};
-
-	const handleTabChange = (value: string) => {
-		const params = new URLSearchParams(searchParams);
-		params.set("tab", value);
-		navigationRouter.push(`/dashboard/groups/${id}?${params.toString()}`);
-	};
 
 	return (
 		<div className="container mx-auto py-8">
@@ -187,10 +209,44 @@ export default function GroupPage({
 								/>
 								<AlertDialogFooter>
 									<AlertDialogCancel>Close</AlertDialogCancel>
+									<AlertDialogAction
+										onClick={handleDeleteGroup}
+										className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+									>
+										Delete
+									</AlertDialogAction>
 								</AlertDialogFooter>
 							</AlertDialogContent>
 						</AlertDialog>
 					)}
+
+					<AlertDialog
+						open={showDeleteModal}
+						onOpenChange={setShowDeleteModal}
+					>
+						<AlertDialogContent>
+							<AlertDialogHeader>
+								<AlertDialogTitle>
+									Delete Group
+								</AlertDialogTitle>
+								<AlertDialogDescription>
+									Are you sure you want to delete this group?
+									This action cannot be undone. All expenses
+									and members will be deleted.
+								</AlertDialogDescription>
+							</AlertDialogHeader>
+
+							<AlertDialogFooter>
+								<AlertDialogCancel>Close</AlertDialogCancel>
+								<AlertDialogAction
+									onClick={onDeleteGroup}
+									className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+								>
+									Delete
+								</AlertDialogAction>
+							</AlertDialogFooter>
+						</AlertDialogContent>
+					</AlertDialog>
 				</div>
 			</div>
 
