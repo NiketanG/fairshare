@@ -15,33 +15,25 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { getCurrencySymbol } from "@/components/ui/currency-select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MemberWithProfile, useGroupMembers } from "@/hooks/use-group-members";
+import { useGroup } from "@/hooks/use-group";
+import { useGroupMembers } from "@/hooks/use-group-members";
 import { useUser } from "@/hooks/use-user";
 import { supabase } from "@/lib/supabase";
 import { getInitials } from "@/lib/utils";
-import { Database } from "@/types/database";
 import { ArrowLeft, Pencil, Plus, Trash2, UserPlus } from "lucide-react";
+import Link from "next/link";
 import {
+	useRouter as useNavigationRouter,
 	useRouter,
 	useSearchParams,
-	useRouter as useNavigationRouter,
 } from "next/navigation";
 import { use, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { GroupForm } from "../../../../components/group-form";
-import { useGroup } from "@/hooks/use-group";
-import Link from "next/link";
-type Group = Database["public"]["Tables"]["groups"]["Row"];
-type Expense = Database["public"]["Tables"]["expenses"]["Row"] & {
-	splits?: Array<Database["public"]["Tables"]["splits"]["Row"]>;
-	paid_by_member?: MemberWithProfile;
-};
-type Member = Database["public"]["Tables"]["group_members"]["Row"];
-type Balance = {
-	from: string;
-	to: string;
-	amount: number;
-};
+import { Balance, Expense } from "../../../../types";
+import { useQuery } from "@tanstack/react-query";
+import { fetchExpenses } from "../../../../lib/api";
+
 type GroupFormData = {
 	name: string;
 	emoji: string;
@@ -55,8 +47,6 @@ export default function GroupPage({
 }) {
 	const { id } = use(params);
 	const { group, loading: groupLoading, updateGroup } = useGroup(id);
-	const [expenses, setExpenses] = useState<Expense[]>([]);
-	const [loading, setLoading] = useState(true);
 	const {
 		members,
 		loading: membersLoading,
@@ -67,46 +57,11 @@ export default function GroupPage({
 	const navigationRouter = useNavigationRouter();
 	const searchParams = useSearchParams();
 	const defaultTab = searchParams.get("tab") || "expenses";
-	const [balances, setBalances] = useState<Balance[]>([]);
 
-	useEffect(() => {
-		async function loadExpenses() {
-			try {
-				const { data: expenseData, error: expenseError } =
-					await supabase
-						.from("expenses")
-						.select(
-							`
-            *,
-            paid_by_member:paid_by(*),
-            splits (
-              member_id,
-              amount
-            )
-          `
-						)
-						.eq("group_id", id)
-						.order("created_at", { ascending: false });
-
-				if (expenseError) throw expenseError;
-				setExpenses(expenseData);
-
-				// Calculate balances
-				const calculatedBalances = calculateBalances(
-					expenseData,
-					members
-				);
-				setBalances(calculatedBalances);
-			} catch (error) {
-				console.error("Error loading expenses:", error);
-				toast.error("Failed to load expenses");
-			} finally {
-				setLoading(false);
-			}
-		}
-
-		loadExpenses();
-	}, [id, members]);
+	const { data: expenses, isLoading: loading } = useQuery({
+		queryKey: ["expenses", id],
+		queryFn: () => fetchExpenses(id, members),
+	});
 
 	// Show error if members fetch failed
 	useEffect(() => {
@@ -265,7 +220,7 @@ export default function GroupPage({
 						</Link>
 					</div>
 					<div className="flex flex-col space-y-4">
-						{expenses.map((expense) => (
+						{expenses?.expenses?.map((expense) => (
 							<Link
 								href={`/dashboard/groups/${id}/expenses/${expense.id}`}
 								key={expense.id}
@@ -296,7 +251,7 @@ export default function GroupPage({
 								</Card>
 							</Link>
 						))}
-						{expenses.length === 0 && (
+						{expenses?.expenses?.length === 0 && (
 							<Card className="p-6 text-center">
 								<p className="text-muted-foreground mb-4">
 									No expenses yet
@@ -412,8 +367,8 @@ export default function GroupPage({
 						<div>
 							<div className="space-y-2">
 								{members.map((member) => {
-									const totalPaid = expenses
-										.filter(
+									const totalPaid = expenses?.expenses
+										?.filter(
 											(exp) => exp.paid_by === member.id
 										)
 										.reduce(
@@ -451,8 +406,9 @@ export default function GroupPage({
 					<Card className="p-6">
 						<div>
 							<div className="space-y-2">
-								{balances.length > 0 ? (
-									balances.map((balance, index) => {
+								{expenses?.balances &&
+								expenses?.balances?.length > 0 ? (
+									expenses?.balances.map((balance, index) => {
 										const fromMember = members.find(
 											(m) => m.id === balance.from
 										);
@@ -505,8 +461,8 @@ export default function GroupPage({
 									</h3>
 									<p className="text-2xl font-bold">
 										{getCurrencySymbol(group.currency)}{" "}
-										{expenses
-											.reduce(
+										{expenses?.expenses
+											?.reduce(
 												(sum, exp) => sum + exp.amount,
 												0
 											)
@@ -537,74 +493,4 @@ export default function GroupPage({
 			</Tabs>
 		</div>
 	);
-}
-
-function calculateBalances(expenses: Expense[], members: Member[]): Balance[] {
-	// Track how much each person has paid and owes
-	const netAmounts = new Map<string, number>();
-
-	// Initialize all members with 0
-	members.forEach((member) => {
-		netAmounts.set(member.id, 0);
-	});
-
-	// Calculate net amounts (positive means they're owed money, negative means they owe)
-	expenses.forEach((expense) => {
-		const paidBy = expense.paid_by;
-		const paidAmount = expense.amount;
-
-		// Add the amount to what the payer has paid
-		netAmounts.set(paidBy, (netAmounts.get(paidBy) || 0) + paidAmount);
-
-		// Subtract the split amounts from each member
-		expense.splits?.forEach((split) => {
-			netAmounts.set(
-				split.member_id,
-				(netAmounts.get(split.member_id) || 0) - split.amount
-			);
-		});
-	});
-
-	// Convert net amounts to a list of balances
-	const balances: Balance[] = [];
-	const entries = Array.from(netAmounts.entries());
-
-	// Sort by amount to handle largest debts first
-	entries.sort((a, b) => a[1] - b[1]);
-
-	let i = 0; // index for people who owe money (negative balance)
-	let j = entries.length - 1; // index for people who are owed money (positive balance)
-
-	while (i < j) {
-		const [debtorId, debtorBalance] = entries[i];
-		const [creditorId, creditorBalance] = entries[j];
-
-		if (Math.abs(debtorBalance) < 0.01 || creditorBalance < 0.01) {
-			// Skip if either balance is effectively zero
-			if (Math.abs(debtorBalance) < 0.01) i++;
-			if (creditorBalance < 0.01) j--;
-			continue;
-		}
-
-		// Calculate the amount that can be settled
-		const amount = Math.min(Math.abs(debtorBalance), creditorBalance);
-
-		if (amount > 0.01) {
-			balances.push({
-				from: debtorId,
-				to: creditorId,
-				amount: Number(amount.toFixed(2)),
-			});
-		}
-
-		// Update the balances
-		entries[i][1] += amount;
-		entries[j][1] -= amount;
-
-		// Move indices if balances are settled
-		if (Math.abs(entries[i][1]) < 0.01) i++;
-		if (entries[j][1] < 0.01) j--;
-	}
-
-	return balances;
 }

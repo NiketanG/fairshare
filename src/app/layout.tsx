@@ -2,6 +2,7 @@ import "@/styles/globals.css";
 import { Poppins } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { Toaster } from "sonner";
+import Providers from "./providers";
 
 const inter = Poppins({
 	subsets: ["latin"],
@@ -30,7 +31,7 @@ export default function RootLayout({
 				)}
 			>
 				<Toaster richColors position="top-right" />
-				{children}
+				<Providers>{children}</Providers>
 				<footer className="container mx-auto pb-6 border-t">
 					<p
 						className={cn(

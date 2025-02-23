@@ -10,44 +10,12 @@ import {
 } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 export default function NewGroupPage() {
-	const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
 	const router = useRouter();
-	const pickerRef = useRef<HTMLDivElement>(null);
-	const buttonRef = useRef<HTMLButtonElement>(null);
-
-	useEffect(() => {
-		const handleClickOutside = (event: MouseEvent) => {
-			if (
-				pickerRef.current &&
-				!pickerRef.current.contains(event.target as Node) &&
-				buttonRef.current &&
-				!buttonRef.current.contains(event.target as Node)
-			) {
-				setShowEmojiPicker(false);
-			}
-		};
-
-		const handleEscapeKey = (event: KeyboardEvent) => {
-			if (event.key === "Escape") {
-				setShowEmojiPicker(false);
-			}
-		};
-
-		if (showEmojiPicker) {
-			document.addEventListener("mousedown", handleClickOutside);
-			document.addEventListener("keydown", handleEscapeKey);
-		}
-
-		return () => {
-			document.removeEventListener("mousedown", handleClickOutside);
-			document.removeEventListener("keydown", handleEscapeKey);
-		};
-	}, [showEmojiPicker]);
 
 	const handleSubmit = async (data: GroupFormData) => {
 		setIsLoading(true);

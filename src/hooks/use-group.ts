@@ -1,66 +1,71 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
-import { Database } from '@/types/database'
-import { toast } from 'sonner'
-
-type Group = Database['public']['Tables']['groups']['Row']
+import { supabase } from "@/lib/supabase";
+import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { getGroupById } from "../lib/api";
+import { Expense, Group } from "../types";
 
 export function useGroup(id: string) {
-  const [group, setGroup] = useState<Group | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
+	const {
+		data: group,
+		isLoading: loading,
+		error,
+		refetch,
+	} = useQuery({
+		queryKey: ["groups", id],
+		queryFn: () => getGroupById(id),
+	});
 
-  useEffect(() => {
-    async function loadGroup() {
-      try {
-        setLoading(true)
-        setError(null)
+	const updateGroup = async (updates: Partial<Group>) => {
+		try {
+			const { error } = await supabase
+				.from("groups")
+				.update(updates)
+				.eq("id", id);
 
-        const { data, error: groupError } = await supabase
-          .from('groups')
-          .select('*')
-          .eq('id', id)
-          .single()
+			if (error) throw error;
 
-        if (groupError) throw groupError
+			// setGroup(prev => prev ? { ...prev, ...updates } : null)
+			refetch();
+			toast.success("Group updated successfully");
+		} catch (err) {
+			console.error("Error updating group:", err);
+			toast.error("Failed to update group");
+			throw err;
+		}
+	};
 
-        setGroup(data)
-      } catch (err) {
-        console.error('Error loading group:', err)
-        setError(err instanceof Error ? err : new Error('Failed to load group'))
-        toast.error('Failed to load group')
-      } finally {
-        setLoading(false)
-      }
-    }
+	return {
+		group,
+		loading,
+		updateGroup,
+		error,
+	};
+}
 
-    loadGroup()
-  }, [id])
+export async function getExpenseByExpenseId(expenseId: string) {
+	try {
+		const { data, error } = await supabase
+			.from("expenses")
+			.select(
+				`
+			*,
+			splits (
+			  member_id,
+			  amount,
+			  split_type,
+			  percentage
+			)
+		  `
+			)
+			.eq("id", expenseId)
+			.single();
 
-  const updateGroup = async (updates: Partial<Group>) => {
-    try {
-      const { error } = await supabase
-        .from('groups')
-        .update(updates)
-        .eq('id', id)
-
-      if (error) throw error
-
-      setGroup(prev => prev ? { ...prev, ...updates } : null)
-      toast.success('Group updated successfully')
-    } catch (err) {
-      console.error('Error updating group:', err)
-      toast.error('Failed to update group')
-      throw err
-    }
-  }
-
-  return {
-    group,
-    loading,
-    error,
-    updateGroup
-  }
-} 
+		if (error) throw error;
+		return data as Expense;
+	} catch (error) {
+		toast.error("Failed to load expense");
+		throw error;
+	}
+}

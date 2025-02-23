@@ -1,10 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
-import { PlusIcon } from "lucide-react";
 import {
 	Card,
 	CardContent,
@@ -12,68 +8,16 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { Database } from "@/types/database";
-import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
+import { PlusIcon } from "lucide-react";
 import Link from "next/link";
-
-type Group = Database["public"]["Tables"]["groups"]["Row"] & {
-	created_by_user: Database["public"]["Tables"]["profiles"]["Row"];
-	group_members: Database["public"]["Tables"]["group_members"]["Row"][];
-};
+import { fetchGroups } from "../../lib/api";
 
 export default function DashboardPage() {
-	const [groups, setGroups] = useState<Group[]>([]);
-	const [loading, setLoading] = useState(true);
-	const router = useRouter();
-
-	useEffect(() => {
-		async function fetchGroups() {
-			try {
-				const {
-					data: { user },
-					error: userError,
-				} = await supabase.auth.getUser();
-				if (userError) throw userError;
-
-				if (!user) {
-					return;
-				}
-
-				const { data: groupItems, error: groupError } = await supabase
-					.from("group_members")
-					.select("group_id")
-					.eq("user_id", user.id)
-					.or(`email.eq.${user.email}`);
-
-				if (groupItems && groupItems.length > 0) {
-					// select from groups where "id" is in groupItems
-					const { data: memberGroups, error: memberGroupError } =
-						await supabase
-							.from("groups")
-							.select(
-								"*, group_members(id), created_by_user:created_by(full_name)"
-							)
-							.in(
-								"id",
-								groupItems.map((item) => item.group_id)
-							);
-
-					setGroups(memberGroups || []);
-				}
-			} catch (error) {
-				console.error("Error in groups fetch:", error);
-				toast.error(
-					error instanceof Error
-						? error.message
-						: "Failed to fetch groups"
-				);
-			} finally {
-				setLoading(false);
-			}
-		}
-
-		fetchGroups();
-	}, []);
+	const { data: groups, isLoading } = useQuery({
+		queryKey: ["groups"],
+		queryFn: fetchGroups,
+	});
 
 	return (
 		<div className="container mx-auto py-8">
@@ -87,7 +31,7 @@ export default function DashboardPage() {
 				</Link>
 			</div>
 
-			{loading ? (
+			{!groups || isLoading ? (
 				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 					{[...Array(3)].map((_, i) => (
 						<Card key={i} className="animate-pulse">
